@@ -5,6 +5,8 @@ import java.math.RoundingMode;
 
 public record Money(BigDecimal amount) {
 
+  public static final Money ZERO = new Money(BigDecimal.ZERO);
+
   public Money {
     amount = setScale(amount);
   }
