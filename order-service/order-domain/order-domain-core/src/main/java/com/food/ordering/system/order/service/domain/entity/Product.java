@@ -15,6 +15,9 @@ public class Product extends BaseEntity<ProductId> {
     price = builder.price;
   }
 
+  public static Builder builder() {
+    return new Builder();
+  }
 
   public String getName() {
     return name;
@@ -33,9 +36,6 @@ public class Product extends BaseEntity<ProductId> {
     private Builder() {
     }
 
-    public static Builder builder() {
-      return new Builder();
-    }
 
     public Builder productId(ProductId val) {
       productId = val;

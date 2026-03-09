@@ -11,8 +11,10 @@ import com.food.ordering.system.order.service.domain.exception.OrderDomainExcept
 import com.food.ordering.system.order.service.domain.valueobject.OrderItemId;
 import com.food.ordering.system.order.service.domain.valueobject.StreetAddress;
 import com.food.ordering.system.order.service.domain.valueobject.TrackingId;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 public class Order extends AggregateRoot<OrderId> {
 
@@ -34,14 +36,60 @@ public class Order extends AggregateRoot<OrderId> {
     items = builder.items;
     trackingId = builder.trackingId;
     orderStatus = builder.orderStatus;
-    failureMessages = builder.failureMessages;
+    failureMessages = builder.failureMessages != null
+        ? builder.failureMessages
+        : new ArrayList<>();
   }
 
-  public boolean validateOrder() {
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  public void validateOrder() {
     validateInitialOrder();
     validateTotalPrice();
     validateItemsPrice();
-    return true;
+  }
+
+  public void pay() {
+    if (!orderStatus.equals(OrderStatus.PENDING)) {
+      throw new OrderDomainException("Order is not in correct state for pay operation");
+    }
+    orderStatus = OrderStatus.PAID;
+  }
+
+  public void approve() {
+    if (!orderStatus.equals(OrderStatus.PAID)) {
+      throw new OrderDomainException("Order is not in correct state for approve operation");
+    }
+    orderStatus = OrderStatus.APPROVED;
+  }
+
+  public void initCancellation(List<String> failureMessages) {
+    if (!orderStatus.equals(OrderStatus.PAID)) {
+      throw new OrderDomainException(
+          "Order is not in correct state for init cancellation operation");
+    }
+    orderStatus = OrderStatus.CANCELLING;
+    addFailureMessages(failureMessages);
+  }
+
+  public void cancel() {
+    if (!(orderStatus.equals(OrderStatus.CANCELLING) || orderStatus.equals(OrderStatus.PENDING))) {
+      throw new OrderDomainException("Order is not in correct state for cancel operation");
+    }
+    orderStatus = OrderStatus.CANCELLED;
+  }
+
+  private void addFailureMessages(List<String> failureMessages) {
+    if (failureMessages == null) {
+      return;
+    }
+    this.failureMessages.addAll(
+        failureMessages.stream()
+            .filter(Predicate.not(String::isEmpty))
+            .toList()
+    );
   }
 
   private void validateItemsPrice() {
@@ -139,9 +187,6 @@ public class Order extends AggregateRoot<OrderId> {
     private Builder() {
     }
 
-    public static Builder builder() {
-      return new Builder();
-    }
 
     public Builder orderId(OrderId val) {
       orderId = val;

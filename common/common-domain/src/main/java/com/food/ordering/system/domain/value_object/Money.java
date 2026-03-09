@@ -2,12 +2,14 @@ package com.food.ordering.system.domain.value_object;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Objects;
 
 public record Money(BigDecimal amount) {
 
   public static final Money ZERO = new Money(BigDecimal.ZERO);
 
   public Money {
+    Objects.requireNonNull(amount, "Amount cannot be null");
     amount = setScale(amount);
   }
 
@@ -20,7 +22,7 @@ public record Money(BigDecimal amount) {
   }
 
   public boolean isGreaterThan(Money money) {
-    return this.amount != null && this.amount.compareTo(money.amount) > 0;
+    return this.amount.compareTo(money.amount) > 0;
   }
 
   public Money add(Money money) {
