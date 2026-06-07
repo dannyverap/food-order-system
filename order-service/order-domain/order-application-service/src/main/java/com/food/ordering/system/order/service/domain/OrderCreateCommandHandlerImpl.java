@@ -28,6 +28,7 @@ public class OrderCreateCommandHandlerImpl implements OrderCreateCommandHandler 
   private final CustomerRepository customerRepository;
   private final OrderDataMapper orderDataMapper;
   private final RestaurantRepository restaurantRepository;
+  private final ApplicationDomainEventPublisher applicationEventPublisher;
 
 
   @Override
@@ -36,8 +37,10 @@ public class OrderCreateCommandHandlerImpl implements OrderCreateCommandHandler 
     checkCustomer(createOrderCommand.customerId());
     Restaurant restaurant = checkRestaurant(createOrderCommand);
     Order order = orderDataMapper.createOrderCommandToOrder(createOrderCommand);
-    OrderCreatedEvent orderCreatedEvent = orderDomainService.validateAndInitiateOrder(order, restaurant);
+    OrderCreatedEvent orderCreatedEvent = orderDomainService.validateAndInitiateOrder(order,
+        restaurant);
     Order savedOrder = orderRepository.save(order);
+    applicationEventPublisher.publish(orderCreatedEvent);
     return orderDataMapper.toCreateOrderResponse(savedOrder);
   }
 
@@ -48,12 +51,12 @@ public class OrderCreateCommandHandlerImpl implements OrderCreateCommandHandler 
 
   private Restaurant checkRestaurant(CreateOrderCommand createOrderCommand) {
     Restaurant restaurant = orderDataMapper.createOrderCommandToRestaurant(createOrderCommand);
-    Optional<Restaurant> restaurantOptional = restaurantRepository.findRestaurantInformation(restaurant);
+    Optional<Restaurant> restaurantOptional = restaurantRepository.findRestaurantInformation(
+        restaurant);
     return restaurantOptional.orElseThrow(
         () -> new OrderDomainException("Could not find restaurant with id: " + restaurant.getId()));
   }
 
-    
 
 }
 
